@@ -8,3 +8,5 @@ Jane Smith - paid 15000 - ch_3RxtNDB8Dl2FMzX01RD0uzX8
 Payment status: succeeded
 John Smith - paid 2000 - ch_3RxttyB8Dl2FMzX01iIM20QF
 Payment status: succeeded
+Jane Smith - paid 2000 - ch_3RxvKXB8Dl2FMzX01AffbYnW
+Payment status: succeeded

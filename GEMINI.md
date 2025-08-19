@@ -25,6 +25,8 @@
 
 *   **Principio de Responsabilidad Única (SRP):** Aplicaremos activamente el SRP en nuestros proyectos. Esto significa que cada clase o módulo tendrá una única razón para cambiar, lo que mejora significativamente la modularidad, la legibilidad y la mantenibilidad del código. Este principio será fundamental para el diseño de nuestro código.
 
+*   **Principio Abierto/Cerrado (OCP):** Tendremos en cuenta el OCP al diseñar nuestro código. Las entidades de software (clases, módulos, funciones) deben estar **abiertas para extensión, pero cerradas para modificación**. Esto significa que deberíamos poder añadir nuevas funcionalidades sin alterar el código existente que ya funciona, promoviendo la estabilidad y la facilidad de mantenimiento.
+
 ---
 
 ## 4. 🔄 Flujo de Trabajo
