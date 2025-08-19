@@ -62,7 +62,7 @@ class TransactionLogger:
             log_file.write(f"Payment status: {charge.status}\n")
 
 @dataclass
-class SripePaymentProcessor:
+class StripePaymentProcessor:
     def process_transaction(self, customer_data, payment_data) -> Charge:
         stripe.api_key = os.getenv("STRIPE_API_KEY")
         
@@ -86,7 +86,7 @@ class SripePaymentProcessor:
 class PaymentService:
     customer_validator = CustomerValidator()
     payment_validator = PaymentDataValidator()
-    payment_processor = SripePaymentProcessor()
+    payment_processor = StripePaymentProcessor()
     notifier = Notifier()
     logger = TransactionLogger()
     
@@ -116,8 +116,8 @@ if __name__ == "__main__":
     payment_processor = PaymentService()
     
     customer_data_with_email = {
-        "name": "John Doe",
-        "contact_info": {"email": "e@gmail.com"},
+        "name": "John Smith",
+        "contact_info": {"email": "Smith@gmail.com"},
     }
     
     customer_data_with_phone = {
@@ -125,11 +125,15 @@ if __name__ == "__main__":
         "contact_info": {"phone": "+1234567890"},
     }
     
-    payment_data = {
-        "amount": 5000,
-        "source": "tok_visa",
-        "cvv": "123"
-        }
+    #payment_data = {"amount" : 15000, "source" : "tok_visa" , "cvv" : 123}
+
+    #payment_processor.process_transaction(customer_data_with_email, payment_data)
+    #payment_processor.process_transaction(customer_data_with_phone, payment_data)
     
-    payment_processor.process_transaction(customer_data_with_email, payment_data)
-    payment_processor.process_transaction(customer_data_with_phone, payment_data)
+    payment_data = {"amount" : 2000, "source" : "tok_radarBlock" , "cvv" : 123}
+    
+    try:
+        payment_processor.process_transaction(customer_data_with_phone, payment_data)
+    except ValueError as e:
+        print(f"Error de validación: {e}")
+    
