@@ -2,6 +2,7 @@ import os
 from dataclasses import dataclass
 
 import stripe
+
 from dotenv import load_dotenv
 from stripe import Charge
 from stripe.error import StripeError
@@ -11,6 +12,7 @@ _ = load_dotenv()
 @dataclass
 class PaymentProcessor:
     def process_transaction(self, customer_data, payment_data) -> Charge:
+        # Responsalididad de validacion de datos
         if not customer_data.get("name"):
             print("datos del cliente invalidos: hay que enviar un nombre")
             raise ValueError("Invalid customer data: missing name")
@@ -25,6 +27,7 @@ class PaymentProcessor:
         
         stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
         
+        # Responsabilidad de procesamiento de pagos
         try:
             charge = stripe.Charge.create(
                 amount=payment_data["amount"],
@@ -37,6 +40,7 @@ class PaymentProcessor:
             print("Error procesando la transacción:", e)
             raise e
         
+        # Responsabilidad de notificación
         if "email" in customer_data["contact_info"]:
             # import smtplib
             from email.mime.text import MIMEText
@@ -62,6 +66,7 @@ class PaymentProcessor:
             print("No se pudo enviar la notificación: falta información de contacto")
             return charge
         
+        # Responsabilidad de registro de transacciones
         with open("transaction_log.txt", "a") as log_file:
             log_file.write(f"{customer_data['name']} - paid {payment_data['amount']} - {charge.id}\n")
             log_file.write(f"Payment status: {charge.status}\n")
