@@ -74,6 +74,7 @@ class EmailNotifier(Notifier):
         msg["To"] = customer_data.contact_info.email or ""
             
         print(f"Email enviado a {customer_data.contact_info.email}")
+
 @dataclass
 class SMSNotifier(Notifier):
     def send_confirmation(self, customer_data: CustomerData):

@@ -16,7 +16,7 @@
 ## 2. ✍️ Estilo y Convenciones de Código
 
 *   **Guía de Estilo:** Seguiremos rigurosamente las convenciones de **PEP 8**, el estándar de la comunidad Python, para asegurar un código limpio y legible.
-*   **Comentarios:** Añadiré comentarios en el código para las partes más complejas o para explicar decisiones de diseño importantes, facilitando tu repaso y comprensión posterior.
+*   **Comentarios:** Añadiré comentarios en el código para las partes más complejas o para explicar decisiones de diseño importantes, facilitando tu repaso y comprensión posterior. Es una buena práctica documentar la funcionalidad principal de las clases y métodos para una mejor comprensión y revisión del código.
 *   **Tipado Estático:** Usaremos `type hints` de Python (incluyendo módulos como `typing` para tipos más complejos como `Optional`, `List`, `Dict`, etc.) para que el código sea más claro, robusto y fácil de mantener. Esto es fundamental para la validación con Pydantic y para la legibilidad general.
 
 *   **Uso de Dataclasses:** Para la creación de clases que principalmente almacenan datos, utilizaremos `dataclasses`. Este módulo de la librería estándar de Python simplifica enormemente la definición de estas clases al generar automáticamente métodos como `__init__`, `__repr__` y `__eq__`. Son ideales para estructuras de datos simples y se pueden combinar con Pydantic para añadir validación.
@@ -32,6 +32,8 @@
 *   **Uso de Pydantic para Validación de Datos:** Para asegurar la integridad de los datos y la robustez del código, utilizaremos **Pydantic**. Esta librería nos permite definir esquemas de datos claros y auto-documentados que validan la información en tiempo de ejecución. Esto no solo previene errores, sino que también mejora drásticamente la legibilidad y el mantenimiento del código, al dejar explícita la estructura de datos que se espera.
 
 *   **Uso de Clases Base Abstractas (ABC):** Para definir interfaces claras y obligar a las subclases a implementar ciertos métodos, utilizaremos el módulo `abc` (Abstract Base Classes). Esto es fundamental para aplicar principios como el Abierto/Cerrado (OCP), ya que permite diseñar componentes que pueden extenderse sin modificar su código base, asegurando una estructura de código robusta y extensible.
+
+*   **Principio de Sustitución de Liskov (LSP) y `Protocol`:** Para asegurar que los objetos de una superclase puedan ser reemplazados por objetos de una subclase sin alterar la corrección del programa, aplicaremos el LSP. Preferiremos el uso de `typing.Protocol` para definir interfaces, ya que ofrece una forma flexible y eficiente de establecer contratos basados en el comportamiento (duck typing), lo que facilita la sustitución y mejora la robustez del diseño.
 
 ---
 
