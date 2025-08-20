@@ -1,15 +1,15 @@
 import os
-from dataclasses import dataclass, field
-from abc import ABC, abstractmethod
-from typing import Optional
-
 import stripe
-from dotenv import load_dotenv
-from pydantic import BaseModel
+from dataclasses import dataclass, field #Para simplificar la creación de clases que son principalmente contenedores de datos.
+from abc import ABC, abstractmethod #Para definir interfaces y clases abstractas.
+
+from dotenv import load_dotenv #Para cargar variables de entorno desde un archivo .env.
+from pydantic import BaseModel #Libreria mas utilizada para validaciones de datos.
+from typing import Optional # Para indicar que un valor puede ser de un tipo específico o None.
 from stripe import Charge
 from stripe.error import StripeError
 from email.mime.text import MIMEText
-from typing import Optional
+
 
 _ = load_dotenv()
 

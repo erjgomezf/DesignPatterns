@@ -17,7 +17,9 @@
 
 *   **Guía de Estilo:** Seguiremos rigurosamente las convenciones de **PEP 8**, el estándar de la comunidad Python, para asegurar un código limpio y legible.
 *   **Comentarios:** Añadiré comentarios en el código para las partes más complejas o para explicar decisiones de diseño importantes, facilitando tu repaso y comprensión posterior.
-*   **Tipado Estático:** Usaremos `type hints` de Python para que el código sea más claro, robusto y fácil de mantener.
+*   **Tipado Estático:** Usaremos `type hints` de Python (incluyendo módulos como `typing` para tipos más complejos como `Optional`, `List`, `Dict`, etc.) para que el código sea más claro, robusto y fácil de mantener. Esto es fundamental para la validación con Pydantic y para la legibilidad general.
+
+*   **Uso de Dataclasses:** Para la creación de clases que principalmente almacenan datos, utilizaremos `dataclasses`. Este módulo de la librería estándar de Python simplifica enormemente la definición de estas clases al generar automáticamente métodos como `__init__`, `__repr__` y `__eq__`. Son ideales para estructuras de datos simples y se pueden combinar con Pydantic para añadir validación.
 
 ---
 
@@ -26,6 +28,10 @@
 *   **Principio de Responsabilidad Única (SRP):** Aplicaremos activamente el SRP en nuestros proyectos. Esto significa que cada clase o módulo tendrá una única razón para cambiar, lo que mejora significativamente la modularidad, la legibilidad y la mantenibilidad del código. Este principio será fundamental para el diseño de nuestro código.
 
 *   **Principio Abierto/Cerrado (OCP):** Tendremos en cuenta el OCP al diseñar nuestro código. Las entidades de software (clases, módulos, funciones) deben estar **abiertas para extensión, pero cerradas para modificación**. Esto significa que deberíamos poder añadir nuevas funcionalidades sin alterar el código existente que ya funciona, promoviendo la estabilidad y la facilidad de mantenimiento.
+
+*   **Uso de Pydantic para Validación de Datos:** Para asegurar la integridad de los datos y la robustez del código, utilizaremos **Pydantic**. Esta librería nos permite definir esquemas de datos claros y auto-documentados que validan la información en tiempo de ejecución. Esto no solo previene errores, sino que también mejora drásticamente la legibilidad y el mantenimiento del código, al dejar explícita la estructura de datos que se espera.
+
+*   **Uso de Clases Base Abstractas (ABC):** Para definir interfaces claras y obligar a las subclases a implementar ciertos métodos, utilizaremos el módulo `abc` (Abstract Base Classes). Esto es fundamental para aplicar principios como el Abierto/Cerrado (OCP), ya que permite diseñar componentes que pueden extenderse sin modificar su código base, asegurando una estructura de código robusta y extensible.
 
 ---
 
@@ -44,6 +50,11 @@
 *   **Instalar dependencias:** `pip install -r requirements.txt`
 *   **Guardar los cambios en las nuevas dependencias:** `pip freeze > requirements.txt`
 *   **Actualizar pip:** `python -m pip install --upgrade pip`
+
+### 📦 Pydantic
+
+*   **Instalar Pydantic:** `pip install pydantic`
+*   **Importar en el código:** `from pydantic import BaseModel` (o los componentes específicos que necesites, como `Field`, `ValidationError`, etc.)
 
 ### 🧪 Ejecución de Pruebas
 
