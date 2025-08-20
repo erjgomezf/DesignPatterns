@@ -1,92 +1,77 @@
 import os
-import stripe
-from dataclasses import dataclass, field #Para simplificar la creación de clases que son principalmente contenedores de datos.
-from abc import ABC, abstractmethod #Para definir interfaces y clases abstractas.
+from dataclasses import dataclass
 
-from dotenv import load_dotenv #Para cargar variables de entorno desde un archivo .env.
-from pydantic import BaseModel #Libreria mas utilizada para validaciones de datos.
-from typing import Optional # Para indicar que un valor puede ser de un tipo específico o None.
+import stripe
+
+from dotenv import load_dotenv
 from stripe import Charge
 from stripe.error import StripeError
-from email.mime.text import MIMEText
-
 
 _ = load_dotenv()
 
-class ContactInfo(BaseModel):
-    email: Optional[str] = None
-    phone: Optional[str] = None
-
-class CustomerData(BaseModel):
-    name: str
-    contact_info: ContactInfo
-    
-class PaymentData(BaseModel):
-    amount: int
-    source: str
-    cvv: Optional[int] = None
-
 @dataclass
 class CustomerValidator:
-    def validate(self, customer_data: CustomerData):      
-        if not customer_data.name:
+    def validate(self, customer_data):      
+        if not customer_data.get("name"):
             print("datos del cliente invalidos: hay que enviar un nombre")
             raise ValueError("Invalid customer data: missing name")
         
-        if not customer_data.contact_info.email and not customer_data.contact_info.phone:
+        if not customer_data.get("contact_info"):
             print("datos del cliente invalidos: hay que enviar un email o telefono")
             raise ValueError("Invalid customer data: missing contact info")
         
 @dataclass
 class PaymentDataValidator:
-    def validate (self, payment_data:PaymentData):
-        if not payment_data.source:
+    def validate (self, payment_data):
+        if not payment_data.get("source"):
             print("datos de pago invalidos")
             raise ValueError("Invalid payment data")
-
-class Notifier(ABC):
-    @abstractmethod
-    def send_confirmation(self, customer_data: CustomerData):...
-
-
-@dataclass
-class EmailNotifier(Notifier):
-    def send_confirmation(self, customer_data: CustomerData):
-        msg = MIMEText("Gracias por su compra.")
-        msg["Subject"] = "Confirmación de compra"
-        msg["From"] = "no-reply@example.com"
-        msg["To"] = customer_data.contact_info.email
-            
-        print(f"Email enviado a {customer_data.contact_info.email}")
-
-class SMSNotifier(Notifier):
-    def send_confirmation(self, customer_data: CustomerData):
-        phone_number = customer_data.contact_info.phone
-        sms_gateway = "La puerta de enlace para enviar SMS"
-        print(f"SMS enviado usando la puerta de enlace {sms_gateway} al número {phone_number}: Gracias por su compra.")            
         
 @dataclass
+class Notifier:
+    def send_confirmation(self, customer_data):
+        if "email" in customer_data["contact_info"]:
+            # import smtplib
+            from email.mime.text import MIMEText
+            
+            msg = MIMEText("Gracias por su compra.")
+            msg["Subject"] = "Confirmación de compra"
+            msg["From"] = "no-reply@example.com"
+            msg["To"] = customer_data["contact_info"]["email"]
+            
+            # server = smtplib.SMTP("localhost")
+            # server.send_message(msg)
+            # server.quit()
+            print(f"Email enviado a {customer_data['contact_info']['email']}")
+            
+        elif "phone" in customer_data["contact_info"]:
+            phone_number = customer_data["contact_info"]["phone"]
+            sms_gateway = "La puerta de enlace para enviar SMS"
+            print(
+                f"SMS enviado usando la puerta de enlace {sms_gateway} al número {phone_number}: Gracias por su compra."
+            )
+            
+        else:
+            print("No se pudo enviar la notificación: falta información de contacto")
+
+@dataclass
 class TransactionLogger:
-    def log(self, customer_data: CustomerData, payment_data:PaymentData, charge):
+    def log(self, customer_data, payment_data, charge):
         with open("transaction_log.txt", "a") as log_file:
-            log_file.write(f"{customer_data.name} - paid {payment_data.amount} - {charge.id}\n")
+            log_file.write(f"{customer_data['name']} - paid {payment_data['amount']} - {charge.id}\n")
             log_file.write(f"Payment status: {charge.status}\n")
 
-class PaymentProcessor(ABC):
-    @abstractmethod
-    def process_transaction(self, customer_data: CustomerData, payment_data:PaymentData) -> Charge:...
-    
 @dataclass
-class StripePaymentProcessor(PaymentProcessor):
-    def process_transaction(self, customer_data: CustomerData, payment_data:PaymentData) -> Charge:
+class StripePaymentProcessor:
+    def process_transaction(self, customer_data, payment_data) -> Charge:
         stripe.api_key = os.getenv("STRIPE_API_KEY")
         
         try:
             charge = stripe.Charge.create(
-                amount=payment_data.amount,
+                amount=payment_data["amount"],
                 currency="usd",
-                source=payment_data.source,
-                description="Cargo por " + customer_data.name,
+                source=payment_data["source"],
+                description="Cargo por " + customer_data["name"],
             )
             print("Transacción exitosa:")
             
@@ -101,12 +86,11 @@ class StripePaymentProcessor(PaymentProcessor):
 class PaymentService:
     customer_validator = CustomerValidator()
     payment_validator = PaymentDataValidator()
-    payment_processor : PaymentProcessor = field(default_factory=StripePaymentProcessor)
-    notifier : Notifier = field(default_factory=EmailNotifier)
-    #notifier : Notifier = field(default_factory=SMSNotifier())
+    payment_processor = StripePaymentProcessor()
+    notifier = Notifier()
     logger = TransactionLogger()
     
-    def process_transaction(self, customer_data: CustomerData, payment_data:PaymentData) -> Charge:
+    def process_transaction(self, customer_data, payment_data) -> Charge:
         
         try:
             self.customer_validator.validate(customer_data)
@@ -129,28 +113,27 @@ class PaymentService:
 
     
 if __name__ == "__main__":
-    sms_notifier = SMSNotifier()
-    payment_processor = PaymentService(notifier=sms_notifier)
+    payment_processor = PaymentService()
     
-    customer_data_with_email = CustomerData(
-        name= "John Smith",
-        contact_info = ContactInfo(email="Smith@gmail.com")
-    )
+    customer_data_with_email = {
+        "name": "John Smith",
+        "contact_info": {"email": "Smith@gmail.com"},
+    }
     
-    customer_data_with_phone = CustomerData(
-        name= "Jane Smith",
-        contact_info = ContactInfo(phone="+1234567890")
-    )
+    customer_data_with_phone = {
+        "name": "Jane Smith",
+        "contact_info": {"phone": "+1234567890"},
+    }
     
     #payment_data = {"amount" : 15000, "source" : "tok_visa" , "cvv" : 123}
 
     #payment_processor.process_transaction(customer_data_with_email, payment_data)
     #payment_processor.process_transaction(customer_data_with_phone, payment_data)
     
-    #payment_data = {"amount" : 2000, "source" : "tok_visa" , "cvv" : 123}
-    payment_data = PaymentData(amount=2000, source="tok_visa", cvv=123)
+    payment_data = {"amount" : 2000, "source" : "tok_radarBlock" , "cvv" : 123}
     
     try:
         payment_processor.process_transaction(customer_data_with_phone, payment_data)
     except ValueError as e:
         print(f"Error de validación: {e}")
+    
