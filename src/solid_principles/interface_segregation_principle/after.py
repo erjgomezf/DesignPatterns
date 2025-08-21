@@ -1,187 +1,434 @@
-import os
+import os #Para acceder a las variables de entorno.
 from dataclasses import dataclass, field #Para simplificar la creación de clases que son principalmente contenedores de datos.
-from typing import Optional, Protocol # Para indicar que un valor puede ser de un tipo específico o None.
-
-import stripe
+from typing import Optional, Protocol #Para definir interfaces y tipos de datos opcionales.
+import uuid #Para generar identificadores únicos universales (UUIDs).
+import stripe #Para interactuar con la API de Stripe, una plataforma de pagos en línea.
 from dotenv import load_dotenv #Para cargar variables de entorno desde un archivo .env.
-from pydantic import BaseModel #Libreria mas utilizada para validaciones de datos.
-from stripe import Charge
-from stripe.error import StripeError
+from pydantic import BaseModel #Para validaciones de datos y creación de modelos de datos.
+from stripe.error import StripeError #Para manejar errores específicos de Stripe.
 
 _ = load_dotenv()
+
 
 class ContactInfo(BaseModel):
     email: Optional[str] = None
     phone: Optional[str] = None
 
+
 class CustomerData(BaseModel):
     name: str
     contact_info: ContactInfo
-    
+    customer_id: Optional[str] = None
+
+
 class PaymentData(BaseModel):
     amount: int
     source: str
-    cvv: Optional[int] = None
 
-@dataclass
-class CustomerValidator:
-    def validate(self, customer_data: CustomerData):      
-        if not customer_data.name:
-            print("datos del cliente invalidos: hay que enviar un nombre")
-            raise ValueError("Invalid customer data: missing name")    
-        if not customer_data.contact_info:
-            print("datos del cliente invalidos: falta información de contacto")
-            raise ValueError("Invalid customer data: missing contact info")
-        if not (customer_data.contact_info.email or customer_data.contact_info.phone):
-            print("datos del cliente invalidos: hay que enviar un email o telefono")
-            raise ValueError("Invalid customer data: missing email or phone")
-        
-@dataclass
-class PaymentDataValidator:
-    def validate (self, payment_data:PaymentData):
-        if not payment_data.source:
-            print("datos de pago invalidos, falta información de fuente")
-            raise ValueError("Invalid payment data: missing source")
-        if payment_data.amount <= 0:
-            print("datos de pago invalidos, el monto debe ser mayor a cero")
-            raise ValueError("Invalid payment data: amount must be greater than zero")
 
-class Notifier(Protocol):
+class PaymentResponse(BaseModel):
+    status: str
+    amount: int
+    transaction_id: Optional[str] = None
+    message: Optional[str] = None
+
+
+class PaymentProcessor(Protocol): 
     """
-    Protocolo para notificar al cliente sobre el estado de la transacción.
+    Protocol for processing payments, refunds, and recurring payments.
+    # HEREDA A TODOS LOS PAYMENTPROCESOR
+    This protocol defines the interface for payment processors. Implementations
+    should provide methods for processing payments, refunds, and setting up recurring payments.
+    """
+
+    def process_transaction(
+        self, customer_data: CustomerData, payment_data: PaymentData
+    ) -> PaymentResponse: ...
     
-    Este protocolo define la interfaz que cualquier clase de notificación debe implementar.
-    La implementacion deberá proporcional un metodo 'send_confirmation' que envíe una notificación al cliente.
+    def refund_payment(self, transaction_id:str) -> PaymentResponse: ...
     
-    """
-    def send_confirmation(self, customer_data: CustomerData):
-        """
-        Envía una notificación de confirmación al cliente.
-        
-        :param customer_data: Datos del cliente que incluyen información de contacto.
-        :tyoep customer_data: CustomerData
-        """
-        ...
+    def setup_recurring_payment(
+        self, customer_data: CustomerData, payment_data: PaymentData
+    ) ->PaymentResponse: ...
 
 
-class EmailNotifier(Notifier):
-    def send_confirmation(self, customer_data: CustomerData):
-        from email.mime.text import MIMEText
-        
-        msg = MIMEText("Gracias por su compra.")
-        msg["Subject"] = "Confirmación de compra"
-        msg["From"] = "no-reply@example.com"
-        msg["To"] = customer_data.contact_info.email or ""
-            
-        print(f"Email enviado a {customer_data.contact_info.email}")
-
-@dataclass
-class SMSNotifier(Notifier):
-    def send_confirmation(self, customer_data: CustomerData):
-        phone_number = customer_data.contact_info.phone
-        sms_gateway = "La puerta de enlace para enviar SMS"
-        print(f"SMS enviado usando la puerta de enlace {sms_gateway} al número {phone_number}: Gracias por su compra.")            
-        
-@dataclass
-class TransactionLogger:
-    def log(self, customer_data: CustomerData, payment_data:PaymentData, charge: Charge):
-        with open("transaction_log.txt", "a") as log_file:
-            log_file.write(f"{customer_data.name} - paid {payment_data.amount} - {charge.id}\n")
-            log_file.write(f"Payment status: {charge['status']}\n")
-
-class PaymentProcessor(Protocol):
-    """
-    Protocolo para procesar transacciones de pago.
-    
-    Este protocolo define la interfaz que cualquier clase de procesamiento de pagos debe implementar.
-    La implementacion deberá proporcionar un método 'process_transaction' que procese una transacción de pago y retorne un objeto Charge.
-    """
-    def process_transaction(self, customer_data: CustomerData, payment_data:PaymentData) -> Charge:
-        """
-        Procesa una transacción de pago.
-        :param customer_data: Datos del cliente que incluyen información de contacto.
-        :type customer_data: CustomerData
-        :param payment_data: Datos del pago que incluyen monto y fuente.
-        :type payment_data: PaymentData
-        :return: Un objeto Charge que representa el resultado de la transacción.
-        :rtype: Charge
-        """
-        ...
-@dataclass
 class StripePaymentProcessor(PaymentProcessor):
-    def process_transaction(self, customer_data: CustomerData, payment_data:PaymentData) -> Charge:
+    def process_transaction(
+        self, customer_data: CustomerData, payment_data: PaymentData
+    ) -> PaymentResponse:
         stripe.api_key = os.getenv("STRIPE_API_KEY")
-        
         try:
             charge = stripe.Charge.create(
                 amount=payment_data.amount,
                 currency="usd",
                 source=payment_data.source,
-                description="Cargo por " + customer_data.name,
+                description="Charge for " + customer_data.name,
             )
-            print("Transacción exitosa:")
-            
+            print("Payment successful")
+            return PaymentResponse(
+                status=charge["status"],
+                amount=charge["amount"],
+                transaction_id=charge["id"],
+                message="Payment successful",
+            )
         except StripeError as e:
-            print("Error procesando la transacción:", e)
-            raise e
+            print("Payment failed:", e)
+            return PaymentResponse(
+                status="failed",
+                amount=payment_data.amount,
+                transaction_id=None,
+                message=str(e),
+            )
+
+    def refund_payment(self, transaction_id: str) -> PaymentResponse:
+        stripe.api_key = os.getenv("STRIPE_API_KEY")
+        try:
+            refund = stripe.Refund.create(charge=transaction_id)
+            print("Refund successful")
+            return PaymentResponse(
+                status=refund["status"],
+                amount=refund["amount"],
+                transaction_id=refund["id"],
+                message="Refund successful",
+            )
+        except StripeError as e:
+            print("Refund failed:", e)
+            return PaymentResponse(
+                status="failed",
+                amount=0,
+                transaction_id=None,
+                message=str(e),
+            )
+
+    def setup_recurring_payment(
+        self, customer_data: CustomerData, payment_data: PaymentData
+    ) -> PaymentResponse:
+        stripe.api_key = os.getenv("STRIPE_API_KEY")
+        price_id = os.getenv("STRIPE_PRICE_ID", "")
+        try:
+            customer = self._get_or_create_customer(customer_data)
+
+            payment_method = self._attach_payment_method(
+                customer.id, payment_data.source
+            )
+
+            self._set_default_payment_method(customer.id, payment_method.id)
+
+            subscription = stripe.Subscription.create(
+                customer=customer.id,
+                items=[
+                    {"price": price_id},
+                ],
+                expand=["latest_invoice.payment_intent"],
+            )
+
+            print("Recurring payment setup successful")
+            amount = subscription["items"]["data"][0]["price"]["unit_amount"]
+            return PaymentResponse(
+                status=subscription["status"],
+                amount=amount,
+                transaction_id=subscription["id"],
+                message="Recurring payment setup successful",
+            )
+        except StripeError as e:
+            print("Recurring payment setup failed:", e)
+            return PaymentResponse(
+                status="failed",
+                amount=0,
+                transaction_id=None,
+                message=str(e),
+            )
+
+    def _get_or_create_customer(
+        self, customer_data: CustomerData
+    ) -> stripe.Customer:
+        """
+        Creates a new customer in Stripe or retrieves an existing one.
+        """
+        if customer_data.customer_id:
+            customer = stripe.Customer.retrieve(customer_data.customer_id)
+            print(f"Customer retrieved: {customer.id}")
+        else:
+            if not customer_data.contact_info.email:
+                raise ValueError("Email required for subscriptions")
+            customer = stripe.Customer.create(
+                name=customer_data.name, email=customer_data.contact_info.email
+            )
+            print(f"Customer created: {customer.id}")
+        return customer
+
+    def _attach_payment_method(
+        self, customer_id: str, payment_source: str
+    ) -> stripe.PaymentMethod:
+        """
+        Attaches a payment method to a customer.
+        """
+        payment_method = stripe.PaymentMethod.retrieve(payment_source)
+        stripe.PaymentMethod.attach(
+            payment_method.id,
+            customer=customer_id,
+        )
+        print(
+            f"Payment method {payment_method.id} attached to customer {customer_id}"
+        )
+        return payment_method
+
+    def _set_default_payment_method(
+        self, customer_id: str, payment_method_id: str
+    ) -> None:
+        """
+        Sets the default payment method for a customer.
+        """
+        stripe.Customer.modify(
+            customer_id,
+            invoice_settings={
+                "default_payment_method": payment_method_id,
+            },
+        )
+        print(f"Default payment method set for customer {customer_id}")
+
+
+class OfflinePaymentProcessor(PaymentProcessor):
+    def process_transaction(
+        self, customer_data: CustomerData, payment_data: PaymentData
+    ) -> PaymentResponse:
+        print("Processing offline payment for", customer_data.name)
+        return PaymentResponse(
+            status="success",
+            amount=payment_data.amount,
+            transaction_id=str(uuid.uuid4()),
+            message="Offline payment success",
+        )
+    """
+    los siguientes métodos levantan errores porque no se pueden hacer reembolsos ni recurrencias a efectivo
+    se incumple el principio de segregación de interfaces porque una clase no debería depender 
+    de clases que no puede implementar
+    """
+    def refund_payment(self, transaction_id: str) -> PaymentResponse:
+        print("refunds aren't supported in OfflinePaymentOricessor.")
+        raise NotImplementedError("Refunds not supported in offline processor.")
     
-        return charge
+    def setup_recurring_payment(self, customer_data: CustomerData, payment_data: PaymentData
+    ) ->PaymentResponse:
+        print("recurring payments aren't supported in OfflinePaymentOricessor.")
+        raise NotImplementedError("Refunds not supported in offline processor.")
+    
+
+class Notifier(Protocol):
+    """
+    Protocol for sending notifications.
+
+    This protocol defines the interface for notifiers. Implementations
+    should provide a method `send_confirmation` that sends a confirmation
+    to the customer.
+    """
+
+    def send_confirmation(self, customer_data: CustomerData): ...
+
+
+class EmailNotifier:
+    def send_confirmation(self, customer_data: CustomerData):
+        from email.mime.text import MIMEText
+
+        if not customer_data.contact_info.email:
+            raise ValueError("Email address is requiered to send an email")
+
+        msg = MIMEText("Thank you for your payment.")
+        msg["Subject"] = "Payment Confirmation"
+        msg["From"] = "no-reply@example.com"
+        msg["To"] = customer_data.contact_info.email
+
+        print("Email sent to", customer_data.contact_info.email)
+
+
+@dataclass
+class SMSNotifier:
+    gateway: str
+
+    def send_confirmation(self, customer_data: CustomerData):
+        phone_number = customer_data.contact_info.phone
+        if not phone_number:
+            print("No phone number provided")
+            return
+        print(
+            f"SMS sent to {phone_number} via {self.gateway}: Thank you for your payment."
+        )
+
+
+class TransactionLogger:
+    def log_transaction(
+        self,
+        customer_data: CustomerData,
+        payment_data: PaymentData,
+        payment_response: PaymentResponse,
+    ):
+        with open("transactions.log", "a") as log_file:
+            log_file.write(
+                f"{customer_data.name} paid {payment_data.amount}\n"
+            )
+            log_file.write(f"Payment status: {payment_response.status}\n")
+            if payment_response.transaction_id:
+                log_file.write(
+                    f"Transaction ID: {payment_response.transaction_id}\n"
+                )
+            log_file.write(f"Message: {payment_response.message}\n")
+
+    def log_refund(
+        self, transaction_id: str, refund_response: PaymentResponse
+    ):
+        with open("transactions.log", "a") as log_file:
+            log_file.write(
+                f"Refund processed for transaction {transaction_id}\n"
+            )
+            log_file.write(f"Refund status: {refund_response.status}\n")
+            log_file.write(f"Message: {refund_response.message}\n")
+
+
+class CustomerValidator:
+    def validate(self, customer_data: CustomerData):
+        if not customer_data.name:
+            print("Invalid customer data: missing name")
+            raise ValueError("Invalid customer data: missing name")
+        if not customer_data.contact_info:
+            print("Invalid customer data: missing contact info")
+            raise ValueError("Invalid customer data: missing contact info")
+        if not (
+            customer_data.contact_info.email
+            or customer_data.contact_info.phone
+        ):
+            print("Invalid customer data: missing email and phone")
+            raise ValueError("Invalid customer data: missing email and phone")
+
+
+class PaymentDataValidator:
+    def validate(self, payment_data: PaymentData):
+        if not payment_data.source:
+            print("Invalid payment data: missing source")
+            raise ValueError("Invalid payment data: missing source")
+        if payment_data.amount <= 0:
+            print("Invalid payment data: amount must be positive")
+            raise ValueError("Invalid payment data: amount must be positive")
 
 
 @dataclass
 class PaymentService:
-    customer_validator = CustomerValidator()
-    payment_validator = PaymentDataValidator()
-    payment_processor : PaymentProcessor = field(default_factory=StripePaymentProcessor)
-    notifier : Notifier = field(default_factory=EmailNotifier)
-    #notifier : Notifier = field(default_factory=SMSNotifier())
-    logger = TransactionLogger()
-    
-    def process_transaction(self, customer_data: CustomerData, payment_data:PaymentData) -> Charge:
-        
-        try:
-            self.customer_validator.validate(customer_data)
-        except ValueError as e:
-            raise e
-        
-        try: 
-            self.payment_validator.validate(payment_data)
-        except ValueError as e:
-            raise e
-        
-        try:
-            charge = self.payment_processor.process_transaction(customer_data, payment_data)
-            self.notifier.send_confirmation(customer_data)
-            self.logger.log(customer_data, payment_data, charge)
-            return charge
-        except StripeError as e:
-            print("Error al procesar la transacción")
-            raise e
+    payment_processor: PaymentProcessor
+    notifier: Notifier
+    customer_validator: CustomerValidator = field(
+        default_factory=CustomerValidator
+    )
+    payment_validator: PaymentDataValidator = field(
+        default_factory=PaymentDataValidator
+    )
+    logger: TransactionLogger = field(default_factory=TransactionLogger)
 
-    
+    def process_transaction(
+        self, customer_data: CustomerData, payment_data: PaymentData
+    ) -> PaymentResponse:
+        self.customer_validator.validate(customer_data)
+        self.payment_validator.validate(payment_data)
+        payment_response = self.payment_processor.process_transaction(
+            customer_data, payment_data
+        )
+        self.notifier.send_confirmation(customer_data)
+        self.logger.log_transaction(
+            customer_data, payment_data, payment_response
+        )
+        return payment_response
+
+    def process_refund(self, transaction_id: str):
+        refund_response = self.payment_processor.refund_payment(transaction_id)
+        self.logger.log_refund(transaction_id, refund_response)
+        return refund_response
+
+    def setup_recurring(
+        self, customer_data: CustomerData, payment_data: PaymentData
+    ):
+        recurring_response = self.payment_processor.setup_recurring_payment(
+            customer_data, payment_data
+        )
+        self.logger.log_transaction(
+            customer_data, payment_data, recurring_response
+        )
+        return recurring_response
+
+
 if __name__ == "__main__":
-    sms_notifier = SMSNotifier()
-    payment_processor = PaymentService(notifier=sms_notifier)
-    
-    customer_data_with_email = CustomerData(
-        name= "John Smith",
-        contact_info = ContactInfo(email="Smith@gmail.com")
-    )
-    
-    customer_data_with_phone = CustomerData(
-        name= "Jane Smith",
-        contact_info = ContactInfo(phone="+1234567890")
-    )
-    
-    #payment_data = {"amount" : 15000, "source" : "tok_visa" , "cvv" : 123}
+    # Set up the payment processors
+    stripe_processor = StripePaymentProcessor()
+    offline_processor = OfflinePaymentProcessor()
 
-    #payment_processor.process_transaction(customer_data_with_email, payment_data)
-    #payment_processor.process_transaction(customer_data_with_phone, payment_data)
-    
-    #payment_data = {"amount" : 2000, "source" : "tok_visa" , "cvv" : 123}
-    payment_data = PaymentData(amount=2000, source="tok_visa", cvv=123)
-    
+    # Set up the customer data and payment data
+    customer_data_with_email = CustomerData(
+        name="John Doe", contact_info=ContactInfo(email="john@example.com")
+    )
+    customer_data_with_phone = CustomerData(
+        name="Jane Doe", contact_info=ContactInfo(phone="1234567890")
+    )
+
+    # Set up the payment data
+    payment_data = PaymentData(amount=100, source="tok_visa")
+
+    # Set up the notifiers
+    email_notifier = EmailNotifier()
+
+    sms_gateway = "YourSMSService"
+    sms_notifier = SMSNotifier(sms_gateway)
+
+    # # Using Stripe processor with email notifier
+    payment_service_email = PaymentService(stripe_processor, email_notifier)
+    payment_service_email.process_transaction(customer_data_with_email, payment_data)
+
+    # Using Stripe processor with SMS notifier
+    payment_service_sms = PaymentService(stripe_processor, sms_notifier)
+    sms_payment_response = payment_service_sms.process_transaction(customer_data_with_phone, payment_data)
+
+    #Using strupe processor with SMS notifier
+    payment_service_sms = PaymentService(stripe_processor, sms_notifier)
+    sms_payment_response = payment_service_sms.process_transaction(customer_data_with_phone, payment_data)
+
+
+    # Example of processing a refund using Stripe processor
+    transaction_id_to_refund = sms_payment_response.transaction_id
+    if transaction_id_to_refund:
+        payment_service_email.process_refund(transaction_id_to_refund)
+
+    # Using offline processor with email notifier
+    offline_payment_service = PaymentService(offline_processor, email_notifier)
+    offline_payment_response = offline_payment_service.process_transaction(
+        customer_data_with_email, payment_data
+    )
+
+    # Attempt to refund using offline processor (will fail)
     try:
-        payment_processor.process_transaction(customer_data_with_phone, payment_data)
-    except ValueError as e:
-        print(f"Error de validación: {e}")
+        if offline_payment_response.transaction_id:
+            offline_payment_service.process_refund(
+                offline_payment_response.transaction_id
+            )
+    except Exception as e:
+        print(f"Refund failed and PaymentService raised an exception: {e}")
+
+    # Attempt to set up recurring payment using offline processor (will fail)
+    try:
+        offline_payment_service.setup_recurring(
+            customer_data_with_email, payment_data
+        )
+
+    except Exception as e:
+        print(
+            f"Recurring payment setup failed and PaymentService raised an exception {e}"
+        )
+
+    try:
+        error_payment_data = PaymentData(amount=100, source="tok_radarBlock")
+        payment_service_email.process_transaction(
+            customer_data_with_email, error_payment_data
+        )
+    except Exception as e:
+        print(f"Payment failed and PaymentService raised an exception: {e}")
+
+    # Set up recurrence
+    recurring_payment_data = PaymentData(amount=100, source="pm_card_visa")
+    payment_service_email.setup_recurring(
+        customer_data_with_email, recurring_payment_data
+    )
