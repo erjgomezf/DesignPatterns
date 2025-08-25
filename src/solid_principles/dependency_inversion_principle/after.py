@@ -295,7 +295,7 @@ class OfflinePaymentProcessor(PaymentProcessorProtocol):
         )
    
 
-class Notifier(Protocol):
+class NotifierProtocol(Protocol):
     """
     Protocolo para notificar al cliente sobre el estado de la transacción.
     
@@ -313,7 +313,7 @@ class Notifier(Protocol):
         ...
 
 
-class EmailNotifier:
+class EmailNotifier(NotifierProtocol):
     def send_confirmation(self, customer_data: CustomerData):
         from email.mime.text import MIMEText
         """
@@ -335,7 +335,7 @@ class EmailNotifier:
 
 
 @dataclass
-class SMSNotifier:
+class SMSNotifier(NotifierProtocol):
     gateway: str
     """
     Notificador de SMS que envía mensajes de confirmación al cliente.
@@ -455,9 +455,9 @@ class PaymentService:
     """
     payment_processor: PaymentProcessorProtocol
     notifier: Notifier
-    customer_validator: CustomerValidator = field(default_factory=CustomerValidator)
-    payment_validator: PaymentDataValidator = field(default_factory=PaymentDataValidator)
-    logger: TransactionLogger = field(default_factory=TransactionLogger)
+    customer_validator: CustomerValidator
+    payment_validator: PaymentDataValidator
+    logger: TransactionLogger
     recurring_processor: Optional[RecurringPaymentProtocol] = None
     refund_processor: Optional[RefundPaymentProtocol] = None
 
@@ -519,65 +519,32 @@ class PaymentService:
 
 
 if __name__ == "__main__":
-    # Levantar el procesador de pagos de Stripe y el procesador de pagos offline
+    # Inicializar las clases de bajo nivel
     stripe_processor = StripePaymentProcessor()
-    offline_processor = OfflinePaymentProcessor()
-
-    # Levanta los datos del cliente
-    customer_data_with_email = CustomerData(
-        name="John Doe", contact_info=ContactInfo(email="john@example.com")
-    )
-    customer_data_with_phone = CustomerData(
-        name="Jane Doe", contact_info=ContactInfo(phone="1234567890")
-    )
-
-    # Levanta los datos de pago
-    payment_data = PaymentData(amount=100, source="tok_visa")
-
-    # Levanta los notifiers
     email_notifier = EmailNotifier()
-
-    sms_gateway = "Tu puerta de enlace SMS"
-    sms_notifier = SMSNotifier(sms_gateway)
-
-    # Usando el procesador de pagos de Stripe con el notificador de correo electrónico
-    payment_service_email = PaymentService(stripe_processor, email_notifier, recurring_processor = stripe_processor, refund_processor = stripe_processor) 
-    payment_service_email.process_transaction(customer_data_with_email, payment_data)
-
-    # Usando el procesador de pagos de Stripe con el notificador de SMS
-    payment_service_sms = PaymentService(stripe_processor, sms_notifier)
-    sms_payment_response = payment_service_sms.process_transaction(customer_data_with_phone, payment_data)
-
-    # Ejemplo de reembolso usando el procesador de pagos de Stripe
-    transaction_id_to_refund = sms_payment_response.transaction_id
-    if transaction_id_to_refund:
-        payment_service_email.process_refund(transaction_id_to_refund)
-
-    # Usando el procesador de pagos offline con el notificador de correo electrónico
-    offline_payment_service = PaymentService(offline_processor, email_notifier)
-    offline_payment_response = offline_payment_service.process_transaction(customer_data_with_email, payment_data)
-
-    # Hace un intento de reembolso usando el procesador offline (fallará)
-    try:
-        if offline_payment_response.transaction_id:
-            offline_payment_service.process_refund(offline_payment_response.transaction_id)
-    except Exception as e:
-        print(f"Refund failed and PaymentService raised an exception: {e}")
-
+    customer_validator = CustomerValidator()
+    payment_validator = PaymentDataValidator()
+    transaction_logger = TransactionLogger()
     
-    # Hace un intento de configurar un pago recurrente usando el procesador offline (fallará)
-    try:
-        offline_payment_service.setup_recurring(customer_data_with_email, payment_data)
-
-    except Exception as e:
-        print(f"Recurring payment setup failed and PaymentService raised an exception {e}")
-
-    try:
-        error_payment_data = PaymentData(amount=100, source="tok_radarBlock")
-        payment_service_email.process_transaction(customer_data_with_email, error_payment_data)
-    except Exception as e:
-        print(f"Payment failed and PaymentService raised an exception: {e}")
-
-    # Levanta los datos de pago recurrente
-    recurring_payment_data = PaymentData(amount=100, source="pm_card_visa")
-    payment_service_email.setup_recurring(customer_data_with_email, recurring_payment_data)
+    #Podemos inicializar una clases de ejemplo seguiendo el DIP
+    offline_processor = OfflinePaymentProcessor()
+    sms_notifier = SMSNotifier(gateway="Twilio")
+    
+    # Inicializar el servicio de pagos (clase de alto nivel)
+    payment_service = PaymentService(
+        payment_processor=stripe_processor,
+        notifier=email_notifier,
+        customer_validator=customer_validator,
+        payment_validator=payment_validator,
+        logger=transaction_logger,
+        recurring_processor=stripe_processor,
+        refund_processor=stripe_processor,
+    )
+    
+    second_payment_service = PaymentService(
+        offline_processor = offline_processor,
+        sms_notifier = sms_notifier,
+        customer_validator = customer_validator,
+        payment_validator = payment_validator,
+        logger = transaction_logger,
+    )
