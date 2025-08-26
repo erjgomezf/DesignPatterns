@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 import os
-from .saver import TextSaver
-from .processors import DownloaderProtocol, TranscriberProtocol
+from .processors import DownloaderProtocol, TranscriberProtocol, SaverProtocol
 
 @dataclass
 class TranscriptionService:
@@ -11,7 +10,7 @@ class TranscriptionService:
     """
     downloader: DownloaderProtocol
     transcriber: TranscriberProtocol
-    saver: TextSaver
+    saver: SaverProtocol
 
     def transcribe_video(self, video_url: str, output_filename: str):
         print("--- Iniciando proceso de transcripción ---")

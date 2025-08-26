@@ -1,7 +1,9 @@
 import os
+from ..processors import SaverProtocol
 
 
-class TextSaver:
+
+class TextSaver(SaverProtocol):
     """
     Clase responsable de guardar texto en un archivo de forma segura.
     """

@@ -1,8 +1,10 @@
 import whisper
 from typing import Optional
+from ..processors import TranscriberProtocol
 
 
-class AudioTranscriber:
+
+class AudioTranscriber(TranscriberProtocol):
     """
     Clase responsable de transcribir un archivo de audio a texto usando Whisper.
     """

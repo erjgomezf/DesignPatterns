@@ -2,9 +2,10 @@ import os
 import pytube as pt
 import uuid
 from typing import Optional
+from ..processors import DownloaderProtocol
 
 
-class VideoDownloader:
+class VideoDownloader(DownloaderProtocol):
     """
     Clase responsable de descargar el audio de un video de YouTube.
 
