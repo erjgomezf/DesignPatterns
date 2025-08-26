@@ -2,20 +2,25 @@ import sys
 from .downloader import VideoDownloader
 from .transcriber import AudioTranscriber
 from .saver import TextSaver
+from .service import TranscriptionService
 
+
+def main(video_url: str):
+    """
+    Punto de entrada principal del script para descargar, transcribir y guardar
+    el texto de un video de YouTube.
+    """
+    # Composición de dependencias: Aquí creamos las instancias concretas.
+    service = TranscriptionService(
+        downloader=VideoDownloader(output_path="temp_audio"),
+        transcriber=AudioTranscriber(model_name="base"), # Usamos un modelo más pequeño para rapidez
+        saver=TextSaver()
+    )
+    service.transcribe_video(video_url, "transcription.txt")
 
 if __name__ == "__main__":
-    video_downloader = VideoDownloader()
-    audio_transcriber = AudioTranscriber()
-    text_saver = TextSaver()
-    
     if len(sys.argv) != 2:
-        print("Usage: python script_name.py <youtube_video_url>")
+        print("Uso: python -m src.solid_principles.youTubeTranscribe.after.main <youtube_video_url>")
         sys.exit(1)
-
-    youtube_video_url = sys.argv[1]
-    audio_path = video_downloader.download_video(youtube_video_url)
-    text = audio_transcriber.transcribe_audio(audio_path)
-    text_saver.save_text(text)
     
-        
+    main(sys.argv[1])

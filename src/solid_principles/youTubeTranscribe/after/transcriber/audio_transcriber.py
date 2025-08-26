@@ -1,37 +1,36 @@
 import whisper
-import os
+from typing import Optional
 
 
 class AudioTranscriber:
     """
-    Clase que recibe una ruta de un archivo de audio y retorna el texto transcrito.
-    :param audio_path: Ruta del archivo de audio.
-    :type audio_path: str
-    :return: Texto transcrito.
-    :rtype: str
-
+    Clase responsable de transcribir un archivo de audio a texto usando Whisper.
     """
+
     def __init__(self, model_name: str = "large"):
         """
-        Inicializa la clase transcribe_youtube_video.
-        :param model_name: Nombre del modelo de Whisper a utilizar.
-        :type model_name: str
+        Inicializa el transcriptor cargando el modelo de Whisper especificado.
+
+        Args:
+            model_name: El nombre del modelo de Whisper a utilizar (ej. "base", "large").
         """
         print(f"Cargando el modelo de whisper...")
-        # Guardamos el modulo como un atributo de la instacia
+        # Guardamos el modelo como un atributo de la instancia
         self.model = whisper.load_model(model_name)
         print(f"Modelo cargado exitosamente...")
 
-    def transcribe_audio(self, audio_path) -> str:
+    def transcribe_audio(self, audio_path: str) -> Optional[str]:
         """
-        Transcribe un video de audio y retorna el texto transcrito.
-        :param audio_path: Ruta del archivo de audio.
-        :type audio_path: str
-        :return: Texto transcrito.
-        :rtype: str
+        Transcribe un archivo de audio y devuelve el texto resultante.
+
+        Args:
+            audio_path: La ruta al archivo de audio a transcribir.
+
+        Returns:
+            El texto transcrito, o None si ocurre un error.
         """
         print(f"Transcribiendo el audio...")
-        
+
         try:
             result = self.model.transcribe(audio_path, fp16=False)
             print(f"Audio transcrito exitosamente...")
@@ -39,9 +38,3 @@ class AudioTranscriber:
         except Exception as e:
             print(f"Error al transcribir el audio: {e}")
             return None
-        finally:
-            try:
-                os.remove(audio_path)
-            except Exception as e:
-                print(f"Error al eliminar el archivo de audio: {e}")
-                
