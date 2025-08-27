@@ -84,7 +84,7 @@ Para que las importaciones funcionen, ejecuta el código como un módulo desde e
 
 2.  **Ejecuta el módulo `main`:**
     ```bash
-    python3 -m src.solid_principles.patron_strategy.main
+    python3 -m src.solid_principles.pattern.strategy_pattern.main
     ```
 
 Esto correrá el `client_code`, que demostrará cómo el `ReportGenerator` puede cambiar su comportamiento de exportación dinámicamente.

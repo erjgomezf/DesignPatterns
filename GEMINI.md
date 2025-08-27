@@ -114,3 +114,18 @@ Esta sección contiene una lista detallada de comandos útiles para el día a d�
 *   Lee los mensajes de error detenidamente, suelen indicar la causa y la solución.
 
 ---
+
+## 6. Guía Rápida de Patrones de Diseño
+
+A continuación, una tabla comparativa que resume patrones de diseño comunes, su propósito y cuándo es ideal aplicarlos, complementando los principios SOLID.
+
+| Patrón | Propósito Principal | Cuándo Usarlo (Casos de Uso) |
+| :--- | :--- | :--- |
+| **Strategy** | Encapsula una familia de algoritmos y los hace intercambiables. | - Cuando tienes múltiples variantes de un algoritmo y quieres que el cliente elija una en tiempo de ejecución.<br>- Para eliminar condicionales complejos (if/elif/else) que seleccionan un comportamiento. |
+| **Observer** | Define una dependencia uno-a-muchos: si un objeto (sujeto) cambia, sus dependientes (observadores) son notificados. | - Cuando cambios en un objeto requieren que otros objetos cambien, pero no quieres acoplamiento directo.<br>- Ideal para sistemas de eventos, notificaciones (UI, apps) y seguimiento de estado. |
+| **Decorator** | Añade nuevas funcionalidades a objetos de forma dinámica y transparente, sin alterar su clase. | - Para añadir responsabilidades a objetos individuales sin afectar a los demás.<br>- Cuando la herencia es impráctica debido a la cantidad de combinaciones de funcionalidades. |
+| **Factory Method** | Define una interfaz para crear un objeto, pero deja que las subclases decidan qué clase concreta instanciar. | - Cuando una clase no puede anticipar la clase de los objetos que necesita crear.<br>- Para dar a los usuarios de una librería o framework una forma de extender sus componentes internos. |
+| **Builder** | Separa la construcción de un objeto complejo de su representación final. | - Cuando el proceso de creación de un objeto es complejo, con muchos pasos o parámetros de configuración.<br>- Para crear diferentes representaciones de un mismo objeto (ej. un coche con o sin GPS). |
+| **Chain of Responsibility** | Pasa una solicitud a través de una cadena de manejadores. Cada manejador decide si procesa la solicitud o la pasa al siguiente. | - Cuando más de un objeto puede manejar una solicitud y el manejador no se conoce a priori.<br>- Para desacoplar al emisor de la solicitud de sus receptores. Ideal para middlewares o filtros. |
+
+---

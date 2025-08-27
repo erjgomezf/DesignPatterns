@@ -1,0 +1,1 @@
+# Este archivo convierte el directorio 'chain_of_responsibility' en un paquete de Python.

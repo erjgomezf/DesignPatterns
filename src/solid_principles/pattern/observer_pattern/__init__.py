@@ -1,0 +1,1 @@
+# Este archivo convierte el directorio 'observer_pattern' en un paquete de Python.

@@ -99,7 +99,7 @@ Para que las importaciones funcionen, ejecuta el código como un módulo desde e
 
 2.  **Ejecuta el módulo `main`:**
     ```bash
-    python3 -m src.solid_principles.patron_factory.main
+    python3 -m src.solid_principles.pattern.factory_pattern.main
     ```
 
 Esto correrá el `client_code`, que demostrará cómo puede operar con diferentes fábricas para obtener distintos resultados sin cambiar su propia lógica.
