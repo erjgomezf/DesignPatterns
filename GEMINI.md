@@ -117,15 +117,42 @@ Esta sección contiene una lista detallada de comandos útiles para el día a d�
 
 ## 6. Guía Rápida de Patrones de Diseño
 
-A continuación, una tabla comparativa que resume patrones de diseño comunes, su propósito y cuándo es ideal aplicarlos, complementando los principios SOLID.
+A continuación, se presentan tablas comparativas que resumen los patrones de diseño clave, agrupados por su categoría, para una referencia rápida.
+
+### Patrones Creacionales
+*Se centran en los mecanismos de creación de objetos, tratando de crear objetos de una manera adecuada a la situación.*
 
 | Patrón | Propósito Principal | Cuándo Usarlo (Casos de Uso) |
 | :--- | :--- | :--- |
-| **Strategy** | Encapsula una familia de algoritmos y los hace intercambiables. | - Cuando tienes múltiples variantes de un algoritmo y quieres que el cliente elija una en tiempo de ejecución.<br>- Para eliminar condicionales complejos (if/elif/else) que seleccionan un comportamiento. |
-| **Observer** | Define una dependencia uno-a-muchos: si un objeto (sujeto) cambia, sus dependientes (observadores) son notificados. | - Cuando cambios en un objeto requieren que otros objetos cambien, pero no quieres acoplamiento directo.<br>- Ideal para sistemas de eventos, notificaciones (UI, apps) y seguimiento de estado. |
-| **Decorator** | Añade nuevas funcionalidades a objetos de forma dinámica y transparente, sin alterar su clase. | - Para añadir responsabilidades a objetos individuales sin afectar a los demás.<br>- Cuando la herencia es impráctica debido a la cantidad de combinaciones de funcionalidades. |
-| **Factory Method** | Define una interfaz para crear un objeto, pero deja que las subclases decidan qué clase concreta instanciar. | - Cuando una clase no puede anticipar la clase de los objetos que necesita crear.<br>- Para dar a los usuarios de una librería o framework una forma de extender sus componentes internos. |
-| **Builder** | Separa la construcción de un objeto complejo de su representación final. | - Cuando el proceso de creación de un objeto es complejo, con muchos pasos o parámetros de configuración.<br>- Para crear diferentes representaciones de un mismo objeto (ej. un coche con o sin GPS). |
-| **Chain of Responsibility** | Pasa una solicitud a través de una cadena de manejadores. Cada manejador decide si procesa la solicitud o la pasa al siguiente. | - Cuando más de un objeto puede manejar una solicitud y el manejador no se conoce a priori.<br>- Para desacoplar al emisor de la solicitud de sus receptores. Ideal para middlewares o filtros. |
+| **Singleton** | Garantizar una única instancia de una clase. | Controlar el ciclo de vida y el acceso a un recurso único (ej. conexión a BD, gestor de configuración). |
+| **Factory Method** | Delegar la creación de objetos a subclases. | Crear un objeto sin especificar la clase exacta, permitiendo que las subclases decidan. |
+| **Abstract Factory** | Crear familias de objetos relacionados o dependientes. | Producir conjuntos de objetos que deben funcionar juntos (ej. UI para Windows y macOS). |
+| **Builder** | Construir un objeto complejo paso a paso. | Separar la construcción de la representación final, permitiendo diferentes configuraciones. |
+| **Prototype** | Crear nuevos objetos copiando un prototipo existente. | Clonar un objeto pre-configurado para evitar un proceso de creación costoso. |
+
+### Patrones Estructurales
+*Se centran en cómo las clases y los objetos se componen para formar estructuras más grandes y flexibles.*
+
+| Patrón | Intención Principal | Foco | Analogía |
+| :--- | :--- | :--- | :--- |
+| **Adapter** | Convertir una interfaz en otra. | Hacer que dos cosas incompatibles funcionen juntas. | Traductor de idiomas. |
+| **Bridge** | Desacoplar abstracción de implementación. | Dividir una jerarquía monolítica en dos independientes. | Interruptor de luz y aparato eléctrico. |
+| **Composite** | Tratar a un grupo de objetos como a uno solo. | Construir jerarquías de parte-todo. | Ejército (soldados y divisiones). |
+| **Decorator** | Añadir comportamiento a un objeto. | Envolver un objeto para darle nuevas "capas" de funcionalidad. | Ponerse ropa (chaqueta, bufanda). |
+| **Facade** | Simplificar la interfaz de un subsistema. | Ocultar la complejidad interna. | Conserje de hotel. |
+| **Flyweight** | Ahorrar memoria compartiendo estado. | Optimizar el uso de recursos para un gran número de objetos. | Caracteres en un editor de texto. |
+| **Proxy** | Controlar el acceso a un objeto. | Actuar como un intermediario con poder. | Tarjeta de crédito. |
+
+### Patrones de Comportamiento
+*Se centran en los algoritmos y la asignación de responsabilidades entre objetos.*
+
+| Patrón | Intención Principal | Foco | Analogía |
+| :--- | :--- | :--- | :--- |
+| **Strategy** | Encapsular algoritmos intercambiables. | Cómo un objeto realiza una tarea. | Elegir una ruta en un mapa (coche, bici, a pie). |
+| **State** | Cambiar el comportamiento de un objeto según su estado. | Qué puede hacer un objeto en su estado actual. | Los botones de un reproductor de música (Play/Pause). |
+| **Mediator** | Centralizar la comunicación entre objetos. | Cómo colabora un grupo de objetos. | Torre de control de un aeropuerto. |
+| **Command** | Encapsular una acción en un objeto. | Convertir una operación en un objeto portable. | Un pedido en un restaurante. |
+| **Observer** | Notificar a múltiples objetos sobre un cambio. | Mantener a los objetos sincronizados. | Suscripción a un canal de YouTube. |
+| **Chain of Responsibility** | Pasar una solicitud por una cadena de posibles manejadores. | Desacoplar quién envía de quién recibe. | Línea de soporte técnico con varios niveles. |
 
 ---

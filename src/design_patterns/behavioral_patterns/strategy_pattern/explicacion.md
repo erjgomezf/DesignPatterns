@@ -6,76 +6,79 @@ Este documento ofrece una explicación didáctica del patrón **Strategy**, util
 
 ## 1. ¿Qué es el Patrón Strategy?
 
-> El **Strategy** es un patrón de diseño de comportamiento que permite definir una familia de algoritmos, encapsular cada uno de ellos en clases separadas y hacer que sus objetos sean intercambiables.
+> El **Strategy** es un patrón de diseño de comportamiento que te permite definir una familia de algoritmos, colocar cada uno de ellos en una clase separada y hacer sus objetos intercambiables.
 
-En esencia, el patrón Strategy permite que el algoritmo varíe independientemente del cliente que lo utiliza. Separa el "qué" hace una clase (el contexto) del "cómo" lo hace (la estrategia).
+Imagina que tienes que ir de un punto A a un punto B. Puedes ir en coche, en bicicleta o caminando. Cada una es una "estrategia" de viaje diferente. El patrón Strategy te permite elegir qué estrategia usar en tiempo de ejecución. En lugar de tener un método gigante con `if (modo == 'coche') ... elif (modo == 'bici') ...`, tienes objetos separados para cada estrategia.
 
 ### ¿Qué Problema Resuelve?
 
-Evita el uso de sentencias condicionales complejas (`if/elif/else`) dentro de una clase que necesita realizar una misma acción de diferentes maneras. En lugar de tener un "monolito" que lo hace todo, se delega el comportamiento específico a objetos más pequeños y enfocados.
+- **Elimina condicionales complejos**: Reemplaza largas cadenas de `if-elif-else` que seleccionan variantes de un mismo algoritmo.
+- **Cumple el Principio de Abierto/Cerrado (OCP)**: Puedes introducir nuevas estrategias sin modificar el código del objeto que las utiliza (el "contexto").
+- **Flexibilidad**: Permite al cliente elegir el algoritmo que se va a usar en tiempo de ejecución.
 
 ---
 
 ## 2. Componentes del Patrón
 
-Analicemos las piezas clave del patrón y su correspondencia en nuestro código de ejemplo:
-
 | Componente | Rol | Archivo de Ejemplo |
 | :--- | :--- | :--- |
-| **Strategy (Estrategia)** | Define la interfaz común para todos los algoritmos soportados. Es el "contrato". | `strategies.py` -> `ExportStrategy` |
-| **ConcreteStrategy** | Implementación de un algoritmo específico, siguiendo la interfaz `Strategy`. | `strategies.py` -> `JsonExportStrategy`, `CsvExportStrategy`, etc. |
-| **Context (Contexto)** | La clase que utiliza una estrategia. Mantiene una referencia a un objeto `Strategy` y se comunica con él a través de su interfaz. | `context.py` -> `ReportGenerator` |
+| **Strategy (Estrategia)** | La interfaz común a todos los algoritmos soportados. | `export_strategy.py` -> `ExportStrategy` |
+| **ConcreteStrategy** | Implementa un algoritmo específico siguiendo la interfaz `Strategy`. | `concrete_strategies.py` -> `JSONExportStrategy`, `CSVExportStrategy` |
+| **Context (Contexto)** | La clase que utiliza una estrategia. Mantiene una referencia a un objeto `Strategy` y se comunica con él a través de su interfaz. | `report_generator.py` -> `ReportGenerator` |
 
 ---
 
 ## 3. Análisis del Código de Ejemplo
 
-### a. La Interfaz y las Estrategias Concretas: `strategies.py`
+Nuestro ejemplo implementa un generador de reportes que puede exportar datos en diferentes formatos (JSON, CSV) usando distintas estrategias.
 
-Este archivo es el corazón del patrón, donde se definen los algoritmos intercambiables.
+### a. La Interfaz `Strategy` y las Estrategias Concretas
 
-- **`ExportStrategy(Protocol)`**: Actúa como la interfaz `Strategy`. Define un contrato claro: cualquier estrategia de exportación **debe** tener un método `export()`.
-    > Esto es clave para el **Principio de Inversión de Dependencias (DIP)**: el contexto no dependerá de las clases concretas, sino de esta abstracción.
+- **`ExportStrategy(Protocol)`**: Define la interfaz. Cualquier estrategia de exportación debe tener un método `export(data)`.
+- **`JSONExportStrategy` y `CSVExportStrategy`**: Son las `ConcreteStrategy`. Cada una implementa el método `export` con la lógica específica para generar su formato.
 
-- **`JsonExportStrategy`, `CsvExportStrategy`, `HtmlExportStrategy`**: Son las `ConcreteStrategy`.
-    - Cada una es una clase independiente que cumple con el protocolo `ExportStrategy`.
-    - Cada una tiene una **única responsabilidad (SRP)**: formatear datos a JSON, CSV o HTML, respectivamente.
+### b. El `Context`
 
-### b. El Contexto: `context.py`
+- **`ReportGenerator`**: Es el `Context`.
+    1.  **No conoce los detalles**: No sabe cómo se genera un JSON o un CSV. Su única responsabilidad es gestionar los datos y delegar la tarea de exportación.
+    2.  **Mantiene una referencia a la estrategia**: Tiene un atributo `_strategy` que almacena el objeto de la estrategia actual.
+    3.  **Permite cambiar la estrategia**: El método `set_strategy()` permite al cliente cambiar la estrategia en cualquier momento.
+    4.  **Delega la ejecución**: El método `generate_report()` simplemente llama a `self._strategy.export()`.
 
-El `ReportGenerator` es el `Contexto`. Utiliza una estrategia, pero es "ignorante" de sus detalles internos.
+### c. El `Client`: `main.py`
 
-- **`__init__(self, strategy: ExportStrategy)`**: Aquí ocurre la **Inyección de Dependencias (DI)**. El `ReportGenerator` no crea su propia estrategia, la **recibe** desde fuera. Nota cómo depende de la abstracción `ExportStrategy`, no de una clase concreta.
-
-- **`set_strategy(...)`**: Este método dota al contexto de una gran flexibilidad, permitiendo **cambiar la estrategia en tiempo de ejecución**.
-
-- **`generate_report(...)`**: Aquí se produce la **delegación**. El contexto no implementa la lógica de exportación; simplemente invoca el método `export` de la estrategia que tiene asignada en ese momento (`self._strategy.export(data)`).
-
-### c. El Cliente: `main.py`
-
-El cliente es el responsable de orquestar todo. Es el único que necesita conocer las clases concretas para poder:
-1.  Crear instancias de las estrategias que necesita (`JsonExportStrategy`, `CsvExportStrategy`).
-2.  Crear la instancia del contexto (`ReportGenerator`).
-3.  **Inyectar** la estrategia inicial en el contexto.
-4.  Decidir cuándo y por qué cambiar de estrategia usando `set_strategy()`.
+- El `client_code` crea una instancia del `ReportGenerator`.
+- Luego, crea una instancia de la estrategia deseada (`JSONExportStrategy` o `CSVExportStrategy`) y la establece en el generador.
+- Finalmente, llama a `generate_report()`, y el generador utiliza la estrategia que se le haya configurado en ese momento.
 
 ---
 
-## 4. Ventajas Principales
+## 4. Ventajas y Desventajas
 
-- **Cumplimiento del Principio Abierto/Cerrado (OCP):** Puedes introducir nuevas estrategias (ej. `XmlExportStrategy`) sin modificar el código del `ReportGenerator` (el contexto).
+### Ventajas
 
-- **Separación de Responsabilidades (SRP):** La lógica de negocio de alto nivel (`ReportGenerator`) se separa de los detalles de implementación de los algoritmos (las estrategias).
+1.  **Intercambio de algoritmos en tiempo de ejecución**: Puedes cambiar la forma en que un objeto realiza una tarea.
+2.  **Aislamiento de la lógica**: La lógica de cada algoritmo está en su propia clase, cumpliendo con el Principio de Responsabilidad Única (SRP).
+3.  **Extensibilidad**: Añadir un nuevo formato de exportación es tan simple como crear una nueva clase de estrategia.
 
-- **Flexibilidad y Reutilización:** Los algoritmos (estrategias) pueden ser reutilizados por diferentes contextos.
+### Desventajas
 
-- **Eliminación de Condicionales:** Simplifica el código del contexto, haciéndolo más limpio y fácil de mantener.
+1.  **Aumento del número de clases**: Si solo tienes un par de algoritmos que rara vez cambian, el patrón puede ser excesivo.
 
 ---
 
-## 5. Cómo Ejecutar el Ejemplo
+## 5. Strategy vs. State
 
-Para que las importaciones funcionen, ejecuta el código como un módulo desde el directorio raíz del proyecto.
+| Patrón | Intención | ¿Quién dirige el cambio? |
+| :--- | :--- | :--- |
+| **Strategy** | Encapsular algoritmos intercambiables para una tarea. | El **cliente** suele decidir qué estrategia usar. |
+| **State** | Permitir que un objeto cambie su comportamiento cuando su estado interno cambia. | El **contexto** o los propios **estados** deciden la transición al siguiente estado. |
+
+---
+
+## 6. Cómo Ejecutar el Ejemplo
+
+Para que las importaciones funcionen correctamente, ejecuta el código como un módulo desde el directorio raíz del proyecto.
 
 1.  **Sitúate en la raíz del proyecto:**
     ```bash
@@ -84,7 +87,5 @@ Para que las importaciones funcionen, ejecuta el código como un módulo desde e
 
 2.  **Ejecuta el módulo `main`:**
     ```bash
-    python3 -m src.solid_principles.pattern.strategy_pattern.main
+    python3 -m src.design_patterns.behavioral_patterns.strategy_pattern.main
     ```
-
-Esto correrá el `client_code`, que demostrará cómo el `ReportGenerator` puede cambiar su comportamiento de exportación dinámicamente.
