@@ -96,7 +96,7 @@ Para que las importaciones funcionen, ejecuta el código como un módulo desde e
 
 2.  **Ejecuta el módulo `main`:**
     ```bash
-    python3 -m src.solid_principles.pattern.decorator_pattern.main
+    python3 -m src.design_patterns.structual_patterns.decorator_pattern.main
     ```
 
 Esto correrá el `client_code`, que demostrará cómo se puede "decorar" un notificador simple con funcionalidades adicionales de forma dinámica.
