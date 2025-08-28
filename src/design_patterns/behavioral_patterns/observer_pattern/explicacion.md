@@ -81,7 +81,7 @@ Para que las importaciones funcionen, ejecuta el código como un módulo desde e
 
 2.  **Ejecuta el módulo `main`:**
     ```bash
-    python3 -m src.solid_principles.pattern.observer_pattern.main
+    python3 -m src.design_patterns.behavioral_patterns.observer_pattern.main
     ```
 
 Esto correrá el `main()`, que demostrará cómo los cambios en la estación meteorológica notifican automáticamente a todos los dispositivos suscritos.

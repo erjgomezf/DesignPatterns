@@ -88,7 +88,7 @@ Para que las importaciones funcionen, ejecuta el código como un módulo desde e
 
 2.  **Ejecuta el módulo `main`:**
     ```bash
-    python3 -m src.solid_principles.pattern.chain_of_responsibility.main
+    python3 -m src.design_patterns.behavioral_patterns.chain_of_responsibility.main
     ```
 
 Esto correrá el `main()`, que demostrará cómo las solicitudes de compra son procesadas por el manejador apropiado en la cadena.
