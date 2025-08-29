@@ -6,7 +6,10 @@ Este documento ofrece una explicación didáctica del patrón **Chain of Respons
 
 ## 1. ¿Qué es el Patrón Chain of Responsibility?
 
+![Cadena de Responsabilidad](../images/chain_of_responsibility.png)
+
 > El **Chain of Responsibility** es un patrón de diseño de comportamiento que permite pasar solicitudes a lo largo de una cadena de manejadores. Al recibir una solicitud, cada manejador decide si la procesa o si la pasa al siguiente manejador en la cadena.
+
 
 Imagina una fila de personas donde cada una tiene una tarea específica. Cuando llega un trabajo, la primera persona lo mira. Si puede hacerlo, lo hace. Si no, se lo pasa a la siguiente persona en la fila, y así sucesivamente, hasta que alguien lo maneja o la solicitud llega al final de la fila sin ser procesada.
 

@@ -10,7 +10,7 @@
             "name": "Depurador de Python: Módulo",
             "type": "debugpy",
             "request": "launch",
-            "module": "src.design_patterns.creational_patterns.builder.main",
+            "module": "src.design_patterns.behavioral_patterns.observer_pattern.main",
             "cwd": "${workspaceFolder}"
         }
     ]
